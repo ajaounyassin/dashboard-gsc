@@ -9,7 +9,7 @@ import type {
   IndexApiResponse,
 } from "@/lib/types/audit";
 
-const INSPECT_CHUNK = 50;
+const INSPECT_CHUNK = 10;
 
 export function useAudit(siteUrl: string) {
   const [rows, setRows] = useState<AuditRow[]>([]);

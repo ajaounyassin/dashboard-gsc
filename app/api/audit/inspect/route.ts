@@ -5,7 +5,7 @@ import { ALLOWED_SITE_URLS } from "@/lib/sites";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const INSPECT_CAP = 50; // Vercel Hobby : timeout 60s
+const INSPECT_CAP = 10; // Vercel Hobby : timeout 60s — 10 × (500ms + ~2s) = ~25s
 
 export async function POST(request: NextRequest) {
   try {
