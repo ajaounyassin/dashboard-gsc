@@ -4,7 +4,10 @@
 
 import { google, Auth } from "googleapis";
 
-const SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/webmasters.readonly",
+  "https://www.googleapis.com/auth/indexing",
+];
 
 /**
  * Retourne un client OAuth2 configuré avec le refresh token.

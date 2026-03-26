@@ -46,7 +46,10 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 // ─────────────────────────────────────────────────────────────
 
 const REDIRECT_URI = "http://localhost:4242/callback";
-const SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/webmasters.readonly",
+  "https://www.googleapis.com/auth/indexing",
+];
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 

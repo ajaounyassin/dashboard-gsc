@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Search, TrendingUp, Zap } from "lucide-react";
+import { LayoutDashboard, Search, TrendingUp, Zap, ClipboardCheck } from "lucide-react";
 import { SiteSelector } from "./SiteSelector";
 import { useSite } from "./SiteContext";
 
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/keywords",     icon: Search,          label: "Mots-clés",   code: "02" },
   { href: "/pages",        icon: TrendingUp,      label: "Pages",       code: "03" },
   { href: "/opportunities",icon: Zap,             label: "Opportunités",code: "04" },
+  { href: "/audit",        icon: ClipboardCheck,  label: "Audit",       code: "05" },
 ];
 
 export function Sidebar() {
