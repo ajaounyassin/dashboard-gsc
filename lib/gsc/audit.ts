@@ -197,6 +197,7 @@ export async function requestIndexing(url: string): Promise<IndexingResultItem> 
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erreur inconnue";
+    console.error("[requestIndexing]", url, msg);
     return { url, success: false, error: msg };
   }
 }
