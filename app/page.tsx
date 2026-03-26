@@ -1,65 +1,72 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useDashboard } from "@/hooks/useDashboard";
+import { useSite } from "@/components/layout/SiteContext";
+import { KPICards } from "@/components/dashboard/KPICards";
+import { BrandNonBrandChart } from "@/components/dashboard/BrandNonBrandChart";
+import { LowHangingFruits } from "@/components/dashboard/LowHangingFruits";
+import { WinnersLosers } from "@/components/dashboard/WinnersLosers";
+import { CTROpportunities } from "@/components/dashboard/CTROpportunities";
+
+export default function DashboardPage() {
+  const { siteUrl } = useSite();
+  const {
+    overview, lowHangingFruits, ctrOpportunities, winnersLosers,
+    isLoadingOverview, isLoadingKeywords, isLoadingPages,
+    errors, refetch,
+  } = useDashboard(siteUrl);
+
+  const periodLabel = overview?.period
+    ? `${overview.period.startDate} → ${overview.period.endDate}`
+    : "— chargement...";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="min-h-screen">
+      <div
+        className="px-6 py-4 sticky top-0 z-40"
+        style={{
+          background: "rgba(8, 12, 18, 0.92)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid var(--border-subtle)",
+        }}
+      >
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div>
+            <h1 className="text-sm font-semibold tracking-widest" style={{ fontFamily: "'Oxanium', sans-serif", color: "var(--foreground)" }}>
+              VUE D&apos;ENSEMBLE
+            </h1>
+            <div className="label-tag" style={{ fontSize: "9px", marginTop: 2 }}>{periodLabel}</div>
+          </div>
+          <button
+            onClick={refetch}
+            disabled={isLoadingOverview || isLoadingKeywords || isLoadingPages}
+            className="flex items-center gap-2 px-4 py-2 rounded text-xs transition-all disabled:opacity-50"
+            style={{ fontFamily: "'Oxanium', sans-serif", letterSpacing: "0.08em", background: "rgba(0, 230, 118, 0.08)", color: "var(--accent-green)", border: "1px solid rgba(0, 230, 118, 0.2)" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <span className={isLoadingOverview ? "animate-spin" : ""} style={{ display: "inline-block" }}>↻</span>
+            ACTUALISER
+          </button>
         </div>
-      </main>
+      </div>
+
+      {errors.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 pt-4">
+          <div className="rounded p-4 text-xs" style={{ background: "rgba(255, 82, 82, 0.06)", border: "1px solid rgba(255, 82, 82, 0.2)", color: "var(--accent-red)", fontFamily: "'JetBrains Mono', monospace" }}>
+            <div className="font-bold mb-1">⚠ ERREUR DE CONNEXION</div>
+            {errors.map((e, i) => <div key={i} style={{ opacity: 0.8 }}>{e}</div>)}
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-4">
+        <KPICards data={overview} isLoading={isLoadingOverview} />
+        <BrandNonBrandChart data={overview?.brandSplit ?? null} isLoading={isLoadingOverview} />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <WinnersLosers data={winnersLosers} isLoading={isLoadingPages} />
+          <LowHangingFruits data={lowHangingFruits} isLoading={isLoadingKeywords} />
+        </div>
+        <CTROpportunities data={ctrOpportunities} isLoading={isLoadingKeywords} />
+      </div>
     </div>
   );
 }
