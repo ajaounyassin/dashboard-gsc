@@ -203,6 +203,8 @@ export default function AuditPage() {
     loadSitemap,
     inspectSelected,
     indexSelected,
+    inspectAndIndex,
+    inspectAndIndexStatus,
     toggleSelect,
     selectAll,
     deselectAll,
@@ -460,8 +462,38 @@ export default function AuditPage() {
                 >
                   {isIndexing ? "SOUMISSION…" : `↑ SOUMETTRE (${selectedCount})`}
                 </button>
+                <button
+                  onClick={inspectAndIndex}
+                  disabled={isBusy || selectedCount === 0}
+                  className="px-3 py-1.5 rounded text-xs disabled:opacity-40 transition-opacity"
+                  style={{
+                    fontFamily: "'Oxanium', sans-serif",
+                    fontSize: "9px",
+                    letterSpacing: "0.07em",
+                    background: "rgba(100, 220, 255, 0.08)",
+                    color: "#64dcff",
+                    border: "1px solid rgba(100, 220, 255, 0.2)",
+                  }}
+                >
+                  {isBusy && inspectAndIndexStatus
+                    ? inspectAndIndexStatus.toUpperCase().slice(0, 20) + "…"
+                    : `⚡ INSPECTER + SOUMETTRE (${selectedCount})`}
+                </button>
               </div>
             </div>
+            {/* Statut inspectAndIndex */}
+            {inspectAndIndexStatus && !isBusy && (
+              <div
+                className="px-4 py-2 text-xs"
+                style={{
+                  borderTop: "1px solid var(--border-dim)",
+                  color: inspectAndIndexStatus.startsWith("✓") ? "var(--accent-green)" : "var(--accent-amber)",
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                {inspectAndIndexStatus}
+              </div>
+            )}
 
             {/* Table */}
             <div className="overflow-x-auto">
