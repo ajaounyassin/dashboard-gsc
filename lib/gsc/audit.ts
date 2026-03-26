@@ -21,6 +21,26 @@ export function siteUrlToBaseUrl(siteUrl: string): string {
   return siteUrl;
 }
 
+/**
+ * Retourne la propriété sc-domain: à utiliser pour l'API URL Inspection.
+ * L'API exige que siteUrl soit la propriété GSC qui CONTIENT l'URL inspectée.
+ * sc-domain: couvre toutes les variantes (www, https, http) → toujours préféré.
+ *   sc-domain:example.fr      →  sc-domain:example.fr (inchangé)
+ *   https://www.example.fr/   →  sc-domain:example.fr
+ *   https://example.fr/       →  sc-domain:example.fr
+ */
+export function toScDomainProperty(siteUrl: string): string {
+  if (siteUrl.startsWith("sc-domain:")) return siteUrl;
+  try {
+    const { hostname } = new URL(siteUrl);
+    // Retirer le préfixe www. si présent
+    const domain = hostname.replace(/^www\./, "");
+    return `sc-domain:${domain}`;
+  } catch {
+    return siteUrl;
+  }
+}
+
 // ── Sitemap ────────────────────────────────────────────────
 
 const SITEMAP_CAP = 500;
@@ -102,10 +122,12 @@ export async function inspectUrl(
 ): Promise<InspectionResult> {
   try {
     const sc = getSearchConsoleClient();
+    // Toujours utiliser sc-domain: pour l'inspection — couvre www/non-www/http/https
+    const inspectionSiteUrl = toScDomainProperty(siteUrl);
     const res = await sc.urlInspection.index.inspect({
       requestBody: {
         inspectionUrl,
-        siteUrl,
+        siteUrl: inspectionSiteUrl,
       },
     });
 
