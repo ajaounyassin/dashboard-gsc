@@ -38,7 +38,7 @@ function StatBlock({
     <div>
       <div className="label-tag mb-1" style={{ color: accent }}>{label}</div>
       <div className="metric-number text-xl font-bold" style={{ color: "var(--foreground)" }}>{value}</div>
-      <div className="label-tag" style={{ color: "var(--text-muted)", fontSize: "9px" }}>{sub}</div>
+      <div className="label-tag" style={{ color: "var(--text-muted)", fontSize: "10px" }}>{sub}</div>
     </div>
   );
 }

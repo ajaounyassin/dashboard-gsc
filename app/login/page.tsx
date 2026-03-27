@@ -123,7 +123,7 @@ export default function LoginPage() {
       </div>
 
       {/* Footer */}
-      <div className="mt-8 label-tag" style={{ fontSize: "8px" }}>
+      <div className="mt-8 label-tag" style={{ fontSize: "10px" }}>
         RANKLIT · DASHBOARD GOOGLE SEARCH CONSOLE
       </div>
     </div>

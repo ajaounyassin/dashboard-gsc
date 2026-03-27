@@ -61,7 +61,7 @@ export function LowHangingFruits({ data, isLoading }: LowHangingFruitsProps) {
         }}
       >
         {["MOT-CLÉ", "POSITION", "IMPRES.", "CTR"].map(h => (
-          <div key={h} className="label-tag" style={{ fontSize: "9px" }}>{h}</div>
+          <div key={h} className="label-tag" style={{ fontSize: "10px" }}>{h}</div>
         ))}
       </div>
 
@@ -143,7 +143,7 @@ export function LowHangingFruits({ data, isLoading }: LowHangingFruitsProps) {
           className="px-5 py-2.5"
           style={{ borderTop: "1px solid var(--border-dim)" }}
         >
-          <span className="label-tag" style={{ fontSize: "9px" }}>
+          <span className="label-tag" style={{ fontSize: "10px" }}>
             {data.length} OPPORTUNITÉS DÉTECTÉES
           </span>
         </div>

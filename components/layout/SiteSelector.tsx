@@ -103,7 +103,7 @@ export function SiteSelector({ value, onChange }: SiteSelectorProps) {
                   </div>
                   <div
                     className="label-tag truncate mt-0.5"
-                    style={{ fontSize: "9px", color: isActive ? "var(--accent-green)" : "var(--text-dim)" }}
+                    style={{ fontSize: "10px", color: isActive ? "var(--accent-green)" : "var(--text-dim)" }}
                   >
                     {site.siteUrl}
                   </div>

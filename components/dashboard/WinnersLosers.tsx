@@ -41,7 +41,7 @@ function PageRow({ row, rank }: { row: PagePerformance; rank: number }) {
       }}
     >
       {/* Rank */}
-      <div className="label-tag" style={{ fontSize: "9px", color: "var(--text-dim)" }}>
+      <div className="label-tag" style={{ fontSize: "10px", color: "var(--text-dim)" }}>
         {String(rank).padStart(2, "0")}
       </div>
 
@@ -57,7 +57,7 @@ function PageRow({ row, rank }: { row: PagePerformance; rank: number }) {
         >
           {truncateUrl(row.page, 50)}
         </a>
-        <div className="label-tag" style={{ fontSize: "9px", marginTop: 2 }}>
+        <div className="label-tag" style={{ fontSize: "10px", marginTop: 2 }}>
           Pos. {row.currentPosition} · CTR {row.currentCtr.toFixed(1)}%
         </div>
       </div>
@@ -130,7 +130,7 @@ export function WinnersLosers({ data, isLoading }: WinnersLosersProps) {
         }}
       >
         {["#", "PAGE", "ACTUEL", "PRÉC.", "DELTA"].map(h => (
-          <div key={h} className="label-tag" style={{ fontSize: "9px" }}>{h}</div>
+          <div key={h} className="label-tag" style={{ fontSize: "10px" }}>{h}</div>
         ))}
       </div>
 

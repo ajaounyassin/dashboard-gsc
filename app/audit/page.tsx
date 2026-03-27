@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSite } from "@/components/layout/SiteContext";
 import { useAudit } from "@/hooks/useAudit";
+import { PageHeader } from "@/components/layout/PageHeader";
 import type { AuditFilter, AuditRow } from "@/lib/types/audit";
 
 const FREE_LIMITS = { inspections: 20, indexations: 5 };
@@ -45,8 +46,8 @@ function QuotaChip({
   return (
     <div className="flex flex-col gap-1 min-w-[110px]">
       <div className="flex items-center justify-between gap-2">
-        <span className="label-tag" style={{ fontSize: "8px" }}>{label}</span>
-        <span style={{ fontSize: "8px", color: nearLimit ? "var(--accent-red)" : color, fontFamily: "'JetBrains Mono', monospace" }}>
+        <span className="label-tag" style={{ fontSize: "10px" }}>{label}</span>
+        <span style={{ fontSize: "10px", color: nearLimit ? "var(--accent-red)" : color, fontFamily: "'JetBrains Mono', monospace" }}>
           {used}/{appLimit}
         </span>
       </div>
@@ -114,7 +115,7 @@ function ProgressBar({ done, total, color }: { done: number; total: number; colo
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
-      <span className="label-tag" style={{ fontSize: "9px", color }}>
+      <span className="label-tag" style={{ fontSize: "10px", color }}>
         {done}/{total}
       </span>
     </div>
@@ -193,7 +194,7 @@ function AuditTableRow({
           {truncateUrl(row.url)}
         </span>
         {row.lastmod && (
-          <div className="label-tag mt-0.5" style={{ fontSize: "8px" }}>
+          <div className="label-tag mt-0.5" style={{ fontSize: "10px" }}>
             Lastmod : {row.lastmod}
           </div>
         )}
@@ -209,7 +210,7 @@ function AuditTableRow({
           <span className="badge-unknown px-2 py-0.5 rounded-sm">N/A</span>
         )}
         {insp?.error && (
-          <div className="label-tag mt-0.5" style={{ fontSize: "8px", color: "var(--accent-red)" }}>
+          <div className="label-tag mt-0.5" style={{ fontSize: "10px", color: "var(--accent-red)" }}>
             {insp.error.slice(0, 60)}
           </div>
         )}
@@ -222,7 +223,7 @@ function AuditTableRow({
             {insp.lastCrawlTime.slice(0, 10)}
           </span>
         ) : (
-          <span className="label-tag" style={{ fontSize: "9px" }}>—</span>
+          <span className="label-tag" style={{ fontSize: "10px" }}>—</span>
         )}
       </td>
 
@@ -235,7 +236,7 @@ function AuditTableRow({
             <span className="badge-error px-2 py-0.5 rounded-sm">ÉCHEC</span>
           )
         ) : (
-          <span className="label-tag" style={{ fontSize: "9px" }}>—</span>
+          <span className="label-tag" style={{ fontSize: "10px" }}>—</span>
         )}
       </td>
     </tr>
@@ -293,29 +294,11 @@ export default function AuditPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header sticky */}
-      <div
-        className="px-6 py-4 sticky top-0 z-40"
-        style={{
-          background: "rgba(8, 12, 18, 0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
-      >
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1
-              className="text-sm font-semibold tracking-widest"
-              style={{ fontFamily: "'Oxanium', sans-serif", color: "var(--foreground)" }}
-            >
-              AUDIT & INDEXATION
-            </h1>
-            <div className="label-tag" style={{ fontSize: "9px", marginTop: 2 }}>
-              Sitemap · Inspection · Soumission Google Indexing API
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Quota chips */}
+      <PageHeader
+        title="AUDIT & INDEXATION"
+        subtitle="Sitemap · Inspection · Soumission Google Indexing API"
+        action={
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-4 px-3 py-2 rounded" style={{ background: "var(--surface-2)", border: "1px solid var(--border-dim)" }}>
               <QuotaChip
                 used={usage.inspections}
@@ -333,24 +316,12 @@ export default function AuditPage() {
                 color="var(--accent-amber)"
               />
             </div>
-
-            <button
-              onClick={loadSitemap}
-              disabled={isBusy}
-              className="flex items-center gap-2 px-4 py-2 rounded text-xs disabled:opacity-50 transition-opacity"
-              style={{
-                fontFamily: "'Oxanium', sans-serif",
-                letterSpacing: "0.08em",
-                background: "rgba(0, 230, 118, 0.08)",
-                color: "var(--accent-green)",
-                border: "1px solid rgba(0, 230, 118, 0.2)",
-              }}
-            >
+            <button onClick={loadSitemap} disabled={isBusy} className="btn-primary">
               {isLoadingSitemap ? "CHARGEMENT…" : "↓ CHARGER SITEMAP"}
             </button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-4">
         {/* Scope error banner */}
@@ -389,7 +360,7 @@ export default function AuditPage() {
         {/* Progress bars */}
         {isInspecting && inspectProgress.total > 0 && (
           <div className="panel p-4 space-y-2">
-            <div className="label-tag" style={{ fontSize: "9px", color: "var(--accent-green)" }}>
+            <div className="label-tag" style={{ fontSize: "10px", color: "var(--accent-green)" }}>
               INSPECTION EN COURS…
             </div>
             <ProgressBar
@@ -402,7 +373,7 @@ export default function AuditPage() {
 
         {isIndexing && indexProgress.total > 0 && (
           <div className="panel p-4 space-y-2">
-            <div className="label-tag" style={{ fontSize: "9px", color: "var(--accent-amber)" }}>
+            <div className="label-tag" style={{ fontSize: "10px", color: "var(--accent-amber)" }}>
               INDEXATION EN COURS…
             </div>
             <ProgressBar
@@ -429,7 +400,7 @@ export default function AuditPage() {
             >
               SITEMAP NON CHARGÉ
             </div>
-            <div className="label-tag" style={{ fontSize: "9px" }}>
+            <div className="label-tag" style={{ fontSize: "10px" }}>
               Cliquez sur "CHARGER SITEMAP" pour démarrer l'audit
             </div>
           </div>
@@ -446,17 +417,17 @@ export default function AuditPage() {
               <div className="flex items-center gap-4">
                 <div>
                   <span className="metric-number text-sm">{rows.length}</span>
-                  <span className="label-tag ml-1.5" style={{ fontSize: "8px" }}>URLS</span>
+                  <span className="label-tag ml-1.5" style={{ fontSize: "10px" }}>URLS</span>
                 </div>
                 <div>
                   <span className="metric-number text-sm">{inspectedCount}</span>
-                  <span className="label-tag ml-1.5" style={{ fontSize: "8px" }}>INSPECTÉES</span>
+                  <span className="label-tag ml-1.5" style={{ fontSize: "10px" }}>INSPECTÉES</span>
                 </div>
                 <div>
                   <span className="metric-number text-sm" style={{ color: "var(--accent-green)" }}>
                     {selectedCount}
                   </span>
-                  <span className="label-tag ml-1.5" style={{ fontSize: "8px" }}>SÉLECTIONNÉES</span>
+                  <span className="label-tag ml-1.5" style={{ fontSize: "10px" }}>SÉLECTIONNÉES</span>
                 </div>
               </div>
 
@@ -470,7 +441,7 @@ export default function AuditPage() {
                     style={{
                       fontFamily: "'Oxanium', sans-serif",
                       letterSpacing: "0.07em",
-                      fontSize: "9px",
+                      fontSize: "10px",
                       background:
                         filter === f.value ? "rgba(0, 230, 118, 0.1)" : "transparent",
                       color:
@@ -494,7 +465,7 @@ export default function AuditPage() {
                   className="px-3 py-1.5 rounded text-xs disabled:opacity-40"
                   style={{
                     fontFamily: "'Oxanium', sans-serif",
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.07em",
                     background: "rgba(255,255,255,0.04)",
                     color: "var(--text-muted)",
@@ -509,7 +480,7 @@ export default function AuditPage() {
                   className="px-3 py-1.5 rounded text-xs disabled:opacity-40"
                   style={{
                     fontFamily: "'Oxanium', sans-serif",
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.07em",
                     background: "rgba(255,255,255,0.04)",
                     color: "var(--text-muted)",
@@ -524,7 +495,7 @@ export default function AuditPage() {
                   className="px-3 py-1.5 rounded text-xs disabled:opacity-40 transition-opacity"
                   style={{
                     fontFamily: "'Oxanium', sans-serif",
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.07em",
                     background: "rgba(0, 230, 118, 0.08)",
                     color: "var(--accent-green)",
@@ -539,7 +510,7 @@ export default function AuditPage() {
                   className="px-3 py-1.5 rounded text-xs disabled:opacity-40 transition-opacity"
                   style={{
                     fontFamily: "'Oxanium', sans-serif",
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.07em",
                     background: "rgba(255, 171, 0, 0.08)",
                     color: "var(--accent-amber)",
@@ -554,7 +525,7 @@ export default function AuditPage() {
                   className="px-3 py-1.5 rounded text-xs disabled:opacity-40 transition-opacity"
                   style={{
                     fontFamily: "'Oxanium', sans-serif",
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.07em",
                     background: "rgba(100, 220, 255, 0.08)",
                     color: "#64dcff",
@@ -589,25 +560,25 @@ export default function AuditPage() {
                     <th className="px-3 py-2.5 text-left w-8" />
                     <th
                       className="px-3 py-2.5 text-left label-tag"
-                      style={{ fontSize: "8px" }}
+                      style={{ fontSize: "10px" }}
                     >
                       URL
                     </th>
                     <th
                       className="px-3 py-2.5 text-left label-tag"
-                      style={{ fontSize: "8px" }}
+                      style={{ fontSize: "10px" }}
                     >
                       COUVERTURE
                     </th>
                     <th
                       className="px-3 py-2.5 text-left label-tag"
-                      style={{ fontSize: "8px" }}
+                      style={{ fontSize: "10px" }}
                     >
                       DERNIER CRAWL
                     </th>
                     <th
                       className="px-3 py-2.5 text-left label-tag"
-                      style={{ fontSize: "8px" }}
+                      style={{ fontSize: "10px" }}
                     >
                       SOUMISSION
                     </th>
@@ -626,7 +597,7 @@ export default function AuditPage() {
               {filteredRows.length === 0 && (
                 <div
                   className="py-12 text-center label-tag"
-                  style={{ fontSize: "9px" }}
+                  style={{ fontSize: "10px" }}
                 >
                   Aucune URL pour ce filtre.
                 </div>

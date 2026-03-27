@@ -7,6 +7,7 @@ import { BrandNonBrandChart } from "@/components/dashboard/BrandNonBrandChart";
 import { LowHangingFruits } from "@/components/dashboard/LowHangingFruits";
 import { WinnersLosers } from "@/components/dashboard/WinnersLosers";
 import { CTROpportunities } from "@/components/dashboard/CTROpportunities";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function DashboardPage() {
   const { siteUrl } = useSite();
@@ -22,32 +23,20 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      <div
-        className="px-6 py-4 sticky top-0 z-40"
-        style={{
-          background: "rgba(8, 12, 18, 0.92)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
-      >
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1 className="text-sm font-semibold tracking-widest" style={{ fontFamily: "'Oxanium', sans-serif", color: "var(--foreground)" }}>
-              VUE D&apos;ENSEMBLE
-            </h1>
-            <div className="label-tag" style={{ fontSize: "9px", marginTop: 2 }}>{periodLabel}</div>
-          </div>
+      <PageHeader
+        title="VUE D'ENSEMBLE"
+        subtitle={periodLabel}
+        action={
           <button
             onClick={refetch}
             disabled={isLoadingOverview || isLoadingKeywords || isLoadingPages}
-            className="flex items-center gap-2 px-4 py-2 rounded text-xs transition-all disabled:opacity-50"
-            style={{ fontFamily: "'Oxanium', sans-serif", letterSpacing: "0.08em", background: "rgba(0, 230, 118, 0.08)", color: "var(--accent-green)", border: "1px solid rgba(0, 230, 118, 0.2)" }}
+            className="btn-primary"
           >
             <span className={isLoadingOverview ? "animate-spin" : ""} style={{ display: "inline-block" }}>↻</span>
             ACTUALISER
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {errors.length > 0 && (
         <div className="max-w-7xl mx-auto px-6 pt-4">

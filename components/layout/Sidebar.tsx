@@ -44,7 +44,7 @@ export function Sidebar({ user }: { user: User }) {
       <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid var(--border-dim)" }}>
         <div className="flex items-center gap-2 mb-4">
           <div className="status-dot" />
-          <span className="label-tag" style={{ color: "var(--accent-green)", fontSize: "9px" }}>
+          <span className="label-tag" style={{ color: "var(--accent-green)", fontSize: "10px" }}>
             SYSTÈME ACTIF
           </span>
         </div>
@@ -80,7 +80,7 @@ export function Sidebar({ user }: { user: User }) {
                 className="label-tag flex-shrink-0 w-5"
                 style={{
                   color: isActive ? "var(--accent-green)" : "var(--text-dim)",
-                  fontSize: "9px",
+                  fontSize: "10px",
                 }}
               >
                 {item.code}
@@ -147,7 +147,7 @@ export function Sidebar({ user }: { user: User }) {
             >
               {displayName}
             </div>
-            <div className="label-tag" style={{ fontSize: "8px" }}>PLAN FREE</div>
+            <div className="label-tag" style={{ fontSize: "10px" }}>PLAN FREE</div>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export function Sidebar({ user }: { user: User }) {
           style={{
             color: "var(--text-dim)",
             fontFamily: "'Oxanium', sans-serif",
-            fontSize: "9px",
+            fontSize: "10px",
             letterSpacing: "0.07em",
           }}
         >

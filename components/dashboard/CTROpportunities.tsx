@@ -47,7 +47,7 @@ function PotentialGain({ gain }: { gain: number }) {
       style={{ color: intensity }}
     >
       +{formatNumber(gain)}
-      <div className="label-tag text-right" style={{ fontSize: "8px", color: "var(--text-dim)" }}>
+      <div className="label-tag text-right" style={{ fontSize: "10px", color: "var(--text-dim)" }}>
         clics/mois
       </div>
     </div>
@@ -92,7 +92,7 @@ export function CTROpportunities({ data, isLoading }: CTROpportunitiesProps) {
         }}
       >
         {["MOT-CLÉ", "POS.", "CTR RÉEL / ATTENDU", "IMPR.", "GAIN"].map(h => (
-          <div key={h} className="label-tag" style={{ fontSize: "9px" }}>{h}</div>
+          <div key={h} className="label-tag" style={{ fontSize: "10px" }}>{h}</div>
         ))}
       </div>
 
@@ -156,7 +156,7 @@ export function CTROpportunities({ data, isLoading }: CTROpportunitiesProps) {
               {/* CTR bar */}
               <div>
                 <CtrBar actual={row.ctr} expected={row.expectedCtr} />
-                <div className="label-tag" style={{ fontSize: "8px", marginTop: 2, color: "var(--text-dim)" }}>
+                <div className="label-tag" style={{ fontSize: "10px", marginTop: 2, color: "var(--text-dim)" }}>
                   attendu {row.expectedCtr.toFixed(1)}%
                 </div>
               </div>

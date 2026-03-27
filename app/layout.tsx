@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppShell } from "@/components/layout/AppShell";
 import { SiteProvider } from "@/components/layout/SiteContext";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,10 +26,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {user ? (
           <SiteProvider>
-            <Sidebar user={user} />
-            <main className="ml-56 min-h-screen overflow-auto">
+            <AppShell user={user}>
               {children}
-            </main>
+            </AppShell>
           </SiteProvider>
         ) : (
           <main className="min-h-screen">
