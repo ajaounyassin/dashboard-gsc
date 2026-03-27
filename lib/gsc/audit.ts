@@ -3,8 +3,7 @@
 // ============================================================
 
 import { XMLParser } from "fast-xml-parser";
-import { google } from "googleapis";
-import { getGSCAuthClient, getSearchConsoleClient } from "@/lib/gsc/client";
+import { google, Auth } from "googleapis";
 import type { SitemapEntry, InspectionResult, IndexingResultItem } from "@/lib/types/audit";
 
 // ── Helpers ────────────────────────────────────────────────
@@ -117,11 +116,12 @@ function sleep(ms: number) {
  * Inspecte une URL via l'API URL Inspection de Search Console.
  */
 export async function inspectUrl(
+  auth: Auth.OAuth2Client,
   inspectionUrl: string,
   siteUrl: string
 ): Promise<InspectionResult> {
   try {
-    const sc = getSearchConsoleClient();
+    const sc = google.searchconsole({ version: "v1", auth });
     // Toujours utiliser sc-domain: pour l'inspection — couvre www/non-www/http/https
     const inspectionSiteUrl = toScDomainProperty(siteUrl);
     const res = await sc.urlInspection.index.inspect({
@@ -154,17 +154,18 @@ export async function inspectUrl(
 }
 
 /**
- * Inspecte un lot d'URLs séquentiellement avec délai de 500ms entre chaque.
- * Destiné à être appelé depuis la route API (max 50 URLs par appel).
+ * Inspecte un lot d'URLs séquentiellement avec délai entre chaque.
+ * Destiné à être appelé depuis la route API (max 10 URLs par appel).
  */
 export async function inspectUrls(
+  auth: Auth.OAuth2Client,
   urls: string[],
   siteUrl: string
 ): Promise<InspectionResult[]> {
   const results: InspectionResult[] = [];
   for (let i = 0; i < urls.length; i++) {
     if (i > 0) await sleep(INSPECT_DELAY_MS);
-    const result = await inspectUrl(urls[i], siteUrl);
+    const result = await inspectUrl(auth, urls[i], siteUrl);
     results.push(result);
   }
   return results;
@@ -178,9 +179,8 @@ const INDEXING_CAP = 200;
  * Soumet une URL à l'API Google Indexing.
  * Requiert le scope https://www.googleapis.com/auth/indexing.
  */
-export async function requestIndexing(url: string): Promise<IndexingResultItem> {
+export async function requestIndexing(auth: Auth.OAuth2Client, url: string): Promise<IndexingResultItem> {
   try {
-    const auth = getGSCAuthClient();
     const indexing = google.indexing({ version: "v3", auth });
 
     const res = await indexing.urlNotifications.publish({
@@ -205,11 +205,11 @@ export async function requestIndexing(url: string): Promise<IndexingResultItem> 
 /**
  * Soumet un lot d'URLs à l'indexation, cap à 200.
  */
-export async function requestIndexingBatch(urls: string[]): Promise<IndexingResultItem[]> {
+export async function requestIndexingBatch(auth: Auth.OAuth2Client, urls: string[]): Promise<IndexingResultItem[]> {
   const capped = urls.slice(0, INDEXING_CAP);
   const results: IndexingResultItem[] = [];
   for (const url of capped) {
-    const result = await requestIndexing(url);
+    const result = await requestIndexing(auth, url);
     results.push(result);
   }
   return results;

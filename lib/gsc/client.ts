@@ -1,63 +1,48 @@
 // ============================================================
-// Client Google Search Console — Auth OAuth2 (refresh token)
+// Client Google — OAuth2 par utilisateur (tokens en Supabase)
 // ============================================================
 
 import { google, Auth } from "googleapis";
-
-const SCOPES = [
-  "https://www.googleapis.com/auth/webmasters.readonly",
-  "https://www.googleapis.com/auth/indexing",
-];
+import { createServiceClient } from "@/lib/supabase/server";
 
 /**
- * Retourne un client OAuth2 configuré avec le refresh token.
- * Utilise un singleton pour éviter de recréer le client à chaque requête.
- *
- * Variables d'env requises dans .env.local :
- *   GSC_CLIENT_ID       — depuis le fichier client_secret_*.json
- *   GSC_CLIENT_SECRET   — depuis le fichier client_secret_*.json
- *   GSC_REFRESH_TOKEN   — obtenu via `node scripts/authorize.mjs`
+ * Crée un OAuth2Client configuré avec le refresh token de l'utilisateur
+ * stocké dans la table user_tokens.
  */
-let authClientCache: Auth.OAuth2Client | null = null;
+export async function getGSCAuthClientForUser(userId: string): Promise<Auth.OAuth2Client> {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from("user_tokens")
+    .select("google_refresh_token, google_access_token, token_expires_at")
+    .eq("user_id", userId)
+    .single();
 
-export function getGSCAuthClient(): Auth.OAuth2Client {
-  if (authClientCache) return authClientCache;
-
-  const clientId = process.env.GSC_CLIENT_ID;
-  const clientSecret = process.env.GSC_CLIENT_SECRET;
-  const refreshToken = process.env.GSC_REFRESH_TOKEN;
-
-  if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error(
-      "Variables d'environnement manquantes.\n" +
-        "Assurez-vous que GSC_CLIENT_ID, GSC_CLIENT_SECRET et GSC_REFRESH_TOKEN " +
-        "sont définis dans .env.local.\n" +
-        "Lancez `node scripts/authorize.mjs` pour obtenir votre refresh token."
-    );
+  if (error || !data?.google_refresh_token) {
+    throw new Error("Token Google introuvable. Reconnectez-vous.");
   }
 
-  const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GSC_CLIENT_ID!,
+    process.env.GSC_CLIENT_SECRET!
+  );
 
-  authClientCache = oauth2Client;
+  oauth2Client.setCredentials({
+    refresh_token: data.google_refresh_token,
+    access_token: data.google_access_token ?? undefined,
+    expiry_date: data.token_expires_at
+      ? new Date(data.token_expires_at).getTime()
+      : undefined,
+  });
+
   return oauth2Client;
 }
 
-/**
- * Retourne une instance de l'API Search Console.
- */
-export function getSearchConsoleClient() {
-  const auth = getGSCAuthClient();
+export async function getSearchConsoleForUser(userId: string) {
+  const auth = await getGSCAuthClientForUser(userId);
   return google.searchconsole({ version: "v1", auth });
 }
 
-/**
- * URL de la propriété GSC — fallback sur la variable d'env si non fournie.
- */
-export function getSiteUrl(siteUrl?: string): string {
-  const url = siteUrl ?? process.env.GSC_SITE_URL;
-  if (!url) {
-    throw new Error("GSC_SITE_URL n'est pas défini.");
-  }
-  return url;
+export async function getIndexingForUser(userId: string) {
+  const auth = await getGSCAuthClientForUser(userId);
+  return google.indexing({ version: "v3", auth });
 }

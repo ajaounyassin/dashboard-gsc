@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { subDays, format } from "date-fns";
 import { getKeywordData } from "@/lib/gsc/queries";
 import { computeOverview } from "@/lib/data/processor";
-import { ALLOWED_SITE_URLS, DEFAULT_SITE, getBrandRegex } from "@/lib/sites";
+import { getAuthenticatedUser } from "@/lib/api/auth";
+import { getGSCAuthClientForUser } from "@/lib/gsc/client";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Regex "jamais match" — brand split désactivé sans config user_sites
+const NO_BRAND_REGEX = /$^/;
+
 export async function GET(request: NextRequest) {
+  const { userId, error } = await getAuthenticatedUser();
+  if (error) return error;
+
   try {
     const { searchParams } = new URL(request.url);
     const today = new Date();
@@ -16,21 +23,24 @@ export async function GET(request: NextRequest) {
 
     const startDate = searchParams.get("startDate") ?? defaultStart;
     const endDate   = searchParams.get("endDate")   ?? defaultEnd;
-    const rawSite   = searchParams.get("siteUrl")   ?? DEFAULT_SITE.value;
+    const siteUrl   = searchParams.get("siteUrl");
+
+    if (!siteUrl)
+      return NextResponse.json({ error: "siteUrl manquant." }, { status: 400 });
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate))
       return NextResponse.json({ error: "Format de date invalide." }, { status: 400 });
 
-    if (!ALLOWED_SITE_URLS.has(rawSite))
-      return NextResponse.json({ error: "Propriété GSC non autorisée." }, { status: 403 });
-
-    const rows = await getKeywordData(startDate, endDate, rawSite);
-    const brandRegex = getBrandRegex(rawSite);
-    const overview = computeOverview(rows, { startDate, endDate }, brandRegex);
+    const auth = await getGSCAuthClientForUser(userId);
+    const rows = await getKeywordData(auth, startDate, endDate, siteUrl);
+    const overview = computeOverview(rows, { startDate, endDate }, NO_BRAND_REGEX);
 
     return NextResponse.json({ overview }, { status: 200 });
-  } catch (error) {
-    console.error("[/api/gsc/overview]", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Erreur inconnue" }, { status: 500 });
+  } catch (err) {
+    console.error("[/api/gsc/overview]", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Erreur inconnue" },
+      { status: 500 }
+    );
   }
 }

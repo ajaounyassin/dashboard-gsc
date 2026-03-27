@@ -1,22 +1,45 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { DEFAULT_SITE } from "@/lib/sites";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+
+export interface GscSite {
+  siteUrl: string;
+  permissionLevel: string;
+}
 
 interface SiteContextType {
+  sites: GscSite[];
   siteUrl: string;
   setSiteUrl: (url: string) => void;
+  isLoading: boolean;
 }
 
 const SiteContext = createContext<SiteContextType>({
-  siteUrl: DEFAULT_SITE.value,
+  sites: [],
+  siteUrl: "",
   setSiteUrl: () => {},
+  isLoading: true,
 });
 
 export function SiteProvider({ children }: { children: ReactNode }) {
-  const [siteUrl, setSiteUrl] = useState(DEFAULT_SITE.value);
+  const [sites, setSites] = useState<GscSite[]>([]);
+  const [siteUrl, setSiteUrl] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/gsc/sites")
+      .then((r) => r.json())
+      .then((data) => {
+        const fetched: GscSite[] = data.sites ?? [];
+        setSites(fetched);
+        if (fetched.length > 0) setSiteUrl(fetched[0].siteUrl ?? "");
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
+
   return (
-    <SiteContext.Provider value={{ siteUrl, setSiteUrl }}>
+    <SiteContext.Provider value={{ sites, siteUrl, setSiteUrl, isLoading }}>
       {children}
     </SiteContext.Provider>
   );

@@ -39,6 +39,10 @@ yarn-error.log*
 # claude code local settings (may contain tokens)
 .claude/
 
+# Google OAuth secrets
+client_secret_*.json
+*.txt
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

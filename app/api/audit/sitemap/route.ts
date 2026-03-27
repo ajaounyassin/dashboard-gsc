@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchSitemap } from "@/lib/gsc/audit";
-import { ALLOWED_SITE_URLS, DEFAULT_SITE } from "@/lib/sites";
+import { getAuthenticatedUser } from "@/lib/api/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const { userId: _userId, error } = await getAuthenticatedUser();
+  if (error) return error;
+
   try {
     const { searchParams } = new URL(request.url);
-    const rawSite = searchParams.get("siteUrl") ?? DEFAULT_SITE.value;
+    const siteUrl = searchParams.get("siteUrl");
 
-    if (!ALLOWED_SITE_URLS.has(rawSite))
-      return NextResponse.json({ error: "Propriété GSC non autorisée." }, { status: 403 });
+    if (!siteUrl)
+      return NextResponse.json({ error: "siteUrl manquant." }, { status: 400 });
 
-    const { entries, truncated, totalCount } = await fetchSitemap(rawSite);
+    const { entries, truncated, totalCount } = await fetchSitemap(siteUrl);
 
     return NextResponse.json(
       { urls: entries, truncated, totalCount },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("[/api/audit/sitemap]", error);
+  } catch (err) {
+    console.error("[/api/audit/sitemap]", err);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erreur inconnue" },
+      { error: err instanceof Error ? err.message : "Erreur inconnue" },
       { status: 500 }
     );
   }

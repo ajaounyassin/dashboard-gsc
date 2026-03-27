@@ -9,7 +9,16 @@ import type {
   IndexApiResponse,
 } from "@/lib/types/audit";
 
-const INSPECT_CHUNK = 10;
+interface SavedResult {
+  url: string;
+  coverage_state?: string;
+  indexing_state?: string;
+  robots_txt_state?: string;
+  last_crawl_time?: string;
+  indexing_success?: boolean;
+  indexing_error?: string;
+  inspected_at?: string;
+}
 
 export function useAudit(siteUrl: string) {
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -42,11 +51,38 @@ export function useAudit(siteUrl: string) {
       }
 
       setSitemapTruncated(data.truncated);
+
+      // Charger les résultats sauvegardés et merger
+      const savedRes = await fetch(`/api/audit/results?siteUrl=${encodeURIComponent(siteUrl)}`);
+      const savedData = savedRes.ok ? await savedRes.json() : { results: [] };
+      const savedMap = new Map<string, SavedResult>(
+        (savedData.results as SavedResult[]).map((r) => [r.url, r])
+      );
+
       setRows(
-        data.urls.map((entry) => ({
-          ...entry,
-          selected: false,
-        }))
+        data.urls.map((entry) => {
+          const saved = savedMap.get(entry.url);
+          return {
+            ...entry,
+            selected: false,
+            inspection: saved?.coverage_state
+              ? {
+                  url: entry.url,
+                  coverageState: saved.coverage_state,
+                  indexingState: saved.indexing_state ?? "Unknown",
+                  robotsTxtState: saved.robots_txt_state ?? "Unknown",
+                  lastCrawlTime: saved.last_crawl_time ?? undefined,
+                }
+              : undefined,
+            indexing: saved?.indexing_success !== undefined
+              ? {
+                  url: entry.url,
+                  success: saved.indexing_success,
+                  error: saved.indexing_error ?? undefined,
+                }
+              : undefined,
+          };
+        })
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur réseau.");
@@ -68,13 +104,12 @@ export function useAudit(siteUrl: string) {
     setInspectProgress({ done: 0, total: selectedUrls.length });
 
     let done = 0;
-    for (let i = 0; i < selectedUrls.length; i += INSPECT_CHUNK) {
-      const chunk = selectedUrls.slice(i, i + INSPECT_CHUNK);
+    for (const url of selectedUrls) {
       try {
         const res = await fetch("/api/audit/inspect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: chunk, siteUrl }),
+          body: JSON.stringify({ urls: [url], siteUrl }),
         });
         const data: InspectApiResponse & { error?: string } = await res.json();
 
@@ -83,15 +118,14 @@ export function useAudit(siteUrl: string) {
           break;
         }
 
-        // Merge results into rows
-        setRows((prev) =>
-          prev.map((row) => {
-            const result = data.results.find((r) => r.url === row.url);
-            return result ? { ...row, inspection: result } : row;
-          })
-        );
+        const result = data.results[0];
+        if (result) {
+          setRows((prev) =>
+            prev.map((row) => (row.url === url ? { ...row, inspection: result } : row))
+          );
+        }
 
-        done += data.results.length;
+        done++;
         setInspectProgress({ done, total: selectedUrls.length });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur réseau.");

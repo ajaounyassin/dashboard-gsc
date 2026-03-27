@@ -1,9 +1,70 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSite } from "@/components/layout/SiteContext";
 import { useAudit } from "@/hooks/useAudit";
 import type { AuditFilter, AuditRow } from "@/lib/types/audit";
+
+const FREE_LIMITS = { inspections: 20, indexations: 5 };
+const PRO_LIMITS = { inspections: 2000, indexations: 200 };
+const GOOGLE_LIMITS = { inspections: 2000, indexations: 200 };
+
+function useQuota() {
+  const [usage, setUsage] = useState({ inspections: 0, indexations: 0 });
+  const [plan, setPlan] = useState<"free" | "pro">("free");
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/settings/usage").then((r) => r.json()),
+      fetch("/api/settings/plan").then((r) => r.json()),
+    ]).then(([u, p]) => {
+      setUsage(u.usage ?? { inspections: 0, indexations: 0 });
+      setPlan(p.plan ?? "free");
+    }).catch(() => {});
+  }, [key]);
+
+  const limits = plan === "pro" ? PRO_LIMITS : FREE_LIMITS;
+  return { usage, limits, refresh: () => setKey((k) => k + 1) };
+}
+
+function QuotaChip({
+  used,
+  appLimit,
+  googleLimit,
+  label,
+  color,
+}: {
+  used: number;
+  appLimit: number;
+  googleLimit: number;
+  label: string;
+  color: string;
+}) {
+  const nearLimit = used >= appLimit * 0.8;
+  return (
+    <div className="flex flex-col gap-1 min-w-[110px]">
+      <div className="flex items-center justify-between gap-2">
+        <span className="label-tag" style={{ fontSize: "8px" }}>{label}</span>
+        <span style={{ fontSize: "8px", color: nearLimit ? "var(--accent-red)" : color, fontFamily: "'JetBrains Mono', monospace" }}>
+          {used}/{appLimit}
+        </span>
+      </div>
+      <div className="h-0.5 rounded-full" style={{ background: "var(--border-subtle)" }}>
+        <div
+          className="h-0.5 rounded-full transition-all"
+          style={{
+            width: `${Math.min(100, Math.round((used / appLimit) * 100))}%`,
+            background: nearLimit ? "var(--accent-red)" : color,
+          }}
+        />
+      </div>
+      <div style={{ fontSize: "7px", color: "var(--text-dim)", fontFamily: "'JetBrains Mono', monospace" }}>
+        Google : {used}/{googleLimit}
+      </div>
+    </div>
+  );
+}
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -185,6 +246,7 @@ function AuditTableRow({
 
 export default function AuditPage() {
   const { siteUrl } = useSite();
+  const { usage, limits, refresh: refreshQuota } = useQuota();
   const {
     filteredRows,
     rows,
@@ -210,13 +272,16 @@ export default function AuditPage() {
     deselectAll,
   } = useAudit(siteUrl);
 
-  // Rechargement automatique quand le site change
   useEffect(() => {
-    if (rows.length > 0) {
-      loadSitemap();
-    }
+    if (siteUrl) loadSitemap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [siteUrl]);
+
+  // Rafraîchir le quota après une inspection ou indexation
+  useEffect(() => {
+    if (!isInspecting && !isIndexing) refreshQuota();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInspecting, isIndexing]);
 
   const FILTERS: { value: AuditFilter; label: string }[] = [
     { value: "all", label: "TOUT" },
@@ -249,20 +314,41 @@ export default function AuditPage() {
               Sitemap · Inspection · Soumission Google Indexing API
             </div>
           </div>
-          <button
-            onClick={loadSitemap}
-            disabled={isBusy}
-            className="flex items-center gap-2 px-4 py-2 rounded text-xs disabled:opacity-50 transition-opacity"
-            style={{
-              fontFamily: "'Oxanium', sans-serif",
-              letterSpacing: "0.08em",
-              background: "rgba(0, 230, 118, 0.08)",
-              color: "var(--accent-green)",
-              border: "1px solid rgba(0, 230, 118, 0.2)",
-            }}
-          >
-            {isLoadingSitemap ? "CHARGEMENT…" : "↓ CHARGER SITEMAP"}
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Quota chips */}
+            <div className="flex items-center gap-4 px-3 py-2 rounded" style={{ background: "var(--surface-2)", border: "1px solid var(--border-dim)" }}>
+              <QuotaChip
+                used={usage.inspections}
+                appLimit={limits.inspections}
+                googleLimit={GOOGLE_LIMITS.inspections}
+                label="INSPECTIONS"
+                color="var(--accent-green)"
+              />
+              <div style={{ width: 1, height: 28, background: "var(--border-dim)" }} />
+              <QuotaChip
+                used={usage.indexations}
+                appLimit={limits.indexations}
+                googleLimit={GOOGLE_LIMITS.indexations}
+                label="SOUMISSIONS"
+                color="var(--accent-amber)"
+              />
+            </div>
+
+            <button
+              onClick={loadSitemap}
+              disabled={isBusy}
+              className="flex items-center gap-2 px-4 py-2 rounded text-xs disabled:opacity-50 transition-opacity"
+              style={{
+                fontFamily: "'Oxanium', sans-serif",
+                letterSpacing: "0.08em",
+                background: "rgba(0, 230, 118, 0.08)",
+                color: "var(--accent-green)",
+                border: "1px solid rgba(0, 230, 118, 0.2)",
+              }}
+            >
+              {isLoadingSitemap ? "CHARGEMENT…" : "↓ CHARGER SITEMAP"}
+            </button>
+          </div>
         </div>
       </div>
 

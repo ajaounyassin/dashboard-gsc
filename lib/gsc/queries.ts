@@ -2,7 +2,7 @@
 // Builders de requêtes GSC — centralisés et typés
 // ============================================================
 
-import { getSearchConsoleClient, getSiteUrl } from "./client";
+import { google, Auth } from "googleapis";
 import type { GSCRow } from "@/lib/types";
 
 export interface QueryOptions {
@@ -11,16 +11,15 @@ export interface QueryOptions {
   dimensions: ("query" | "page" | "device" | "country")[];
   rowLimit?: number;
   startRow?: number;
-  siteUrl?: string; // override dynamique
+  siteUrl: string;
 }
 
-export async function queryGSC(options: QueryOptions): Promise<GSCRow[]> {
-  const sc = getSearchConsoleClient();
-  const siteUrl = getSiteUrl(options.siteUrl);
+export async function queryGSC(auth: Auth.OAuth2Client, options: QueryOptions): Promise<GSCRow[]> {
+  const sc = google.searchconsole({ version: "v1", auth });
   const rowLimit = options.rowLimit ?? 5000;
 
   const response = await sc.searchanalytics.query({
-    siteUrl,
+    siteUrl: options.siteUrl,
     requestBody: {
       startDate: options.startDate,
       endDate: options.endDate,
@@ -34,13 +33,13 @@ export async function queryGSC(options: QueryOptions): Promise<GSCRow[]> {
   return (response.data.rows ?? []) as GSCRow[];
 }
 
-export async function queryGSCAll(options: QueryOptions): Promise<GSCRow[]> {
+export async function queryGSCAll(auth: Auth.OAuth2Client, options: QueryOptions): Promise<GSCRow[]> {
   const PAGE_SIZE = 25000;
   const allRows: GSCRow[] = [];
   let startRow = 0;
 
   while (true) {
-    const rows = await queryGSC({ ...options, rowLimit: PAGE_SIZE, startRow });
+    const rows = await queryGSC(auth, { ...options, rowLimit: PAGE_SIZE, startRow });
     allRows.push(...rows);
     if (rows.length < PAGE_SIZE) break;
     startRow += PAGE_SIZE;
@@ -50,17 +49,19 @@ export async function queryGSCAll(options: QueryOptions): Promise<GSCRow[]> {
 }
 
 export async function getKeywordData(
+  auth: Auth.OAuth2Client,
   startDate: string,
   endDate: string,
-  siteUrl?: string
+  siteUrl: string
 ): Promise<GSCRow[]> {
-  return queryGSCAll({ startDate, endDate, dimensions: ["query"], siteUrl });
+  return queryGSCAll(auth, { startDate, endDate, dimensions: ["query"], siteUrl });
 }
 
 export async function getPageData(
+  auth: Auth.OAuth2Client,
   startDate: string,
   endDate: string,
-  siteUrl?: string
+  siteUrl: string
 ): Promise<GSCRow[]> {
-  return queryGSCAll({ startDate, endDate, dimensions: ["page"], siteUrl });
+  return queryGSCAll(auth, { startDate, endDate, dimensions: ["page"], siteUrl });
 }

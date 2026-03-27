@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { KPIOverview, LowHangingFruit, WinnersLosers, CTROpportunity } from "@/lib/types";
 import { format, subDays } from "date-fns";
-import { DEFAULT_SITE } from "@/lib/sites";
-
 interface DashboardState {
   overview: KPIOverview | null;
   lowHangingFruits: LowHangingFruit[];
@@ -20,7 +18,7 @@ const defaultEnd = () => format(subDays(new Date(), 3), "yyyy-MM-dd");
 const defaultStart = () => format(subDays(new Date(), 32), "yyyy-MM-dd");
 
 export function useDashboard(
-  siteUrl = DEFAULT_SITE.value,
+  siteUrl = "",
   startDate = defaultStart(),
   endDate = defaultEnd()
 ) {
