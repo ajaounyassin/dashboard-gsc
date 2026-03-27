@@ -35,8 +35,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Inclure le premier message d'erreur pour diagnostic côté client
+    const firstError = results.find((r) => !r.success)?.error ?? null;
+
     return NextResponse.json(
-      { results, processed: results.length, total: urls.length },
+      { results, processed: results.length, total: urls.length, firstError },
       { status: 200 }
     );
   } catch (error) {

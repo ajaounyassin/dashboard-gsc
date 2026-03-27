@@ -234,7 +234,7 @@ export function useAudit(siteUrl: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ urls: selectedUrls, siteUrl }),
       });
-      const data: IndexApiResponse & { error?: string } = await res.json();
+      const data: IndexApiResponse & { error?: string; firstError?: string } = await res.json();
 
       if (res.status === 403 && data.error === "INDEXING_SCOPE_MISSING") {
         setScopeError(true);
@@ -253,6 +253,11 @@ export function useAudit(siteUrl: string) {
         })
       );
       setIndexProgress({ done: data.processed, total: selectedUrls.length });
+
+      // Afficher le message d'erreur Google pour diagnostic
+      if (data.firstError) {
+        setError(`Échec indexation : ${data.firstError}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur réseau.");
     } finally {
