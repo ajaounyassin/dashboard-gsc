@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Search, TrendingUp, Zap, ClipboardCheck } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, Search, TrendingUp, Zap, ClipboardCheck, Settings, LogOut } from "lucide-react";
 import { SiteSelector } from "./SiteSelector";
 import { useSite } from "./SiteContext";
+import { createClient } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 const NAV_ITEMS = [
   { href: "/",             icon: LayoutDashboard, label: "Overview",    code: "01" },
@@ -12,11 +14,23 @@ const NAV_ITEMS = [
   { href: "/pages",        icon: TrendingUp,      label: "Pages",       code: "03" },
   { href: "/opportunities",icon: Zap,             label: "Opportunités",code: "04" },
   { href: "/audit",        icon: ClipboardCheck,  label: "Audit",       code: "05" },
+  { href: "/settings",     icon: Settings,        label: "Réglages",    code: "06" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: User }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { siteUrl, setSiteUrl } = useSite();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  const displayName = user.user_metadata?.full_name ?? user.email ?? "Utilisateur";
+  const avatarUrl = user.user_metadata?.avatar_url as string | undefined;
 
   return (
     <aside
@@ -38,7 +52,7 @@ export function Sidebar() {
           className="text-sm font-bold mb-0.5 tracking-wide"
           style={{ fontFamily: "'Oxanium', sans-serif", color: "var(--foreground)" }}
         >
-          GSC DASHBOARD
+          RANKLIT
         </p>
         <div className="mt-3">
           <SiteSelector value={siteUrl} onChange={setSiteUrl} />
@@ -62,7 +76,6 @@ export function Sidebar() {
                   : "2px solid transparent",
               }}
             >
-              {/* Code */}
               <span
                 className="label-tag flex-shrink-0 w-5"
                 style={{
@@ -73,13 +86,11 @@ export function Sidebar() {
                 {item.code}
               </span>
 
-              {/* Icon */}
               <Icon
                 className="h-3.5 w-3.5 flex-shrink-0 transition-colors"
                 style={{ color: isActive ? "var(--accent-green)" : "var(--text-muted)" }}
               />
 
-              {/* Label */}
               <span
                 className="text-sm transition-colors"
                 style={{
@@ -91,7 +102,6 @@ export function Sidebar() {
                 {item.label}
               </span>
 
-              {/* Active glow */}
               {isActive && (
                 <div
                   className="absolute inset-0 rounded pointer-events-none"
@@ -103,18 +113,58 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
+      {/* User + déconnexion */}
       <div
-        className="px-5 py-4"
+        className="px-4 py-4 space-y-3"
         style={{ borderTop: "1px solid var(--border-dim)" }}
       >
-        <div className="label-tag mb-1" style={{ fontSize: "9px" }}>LATENCE DONNÉES</div>
-        <div
-          className="metric-number text-xs"
-          style={{ color: "var(--accent-amber)" }}
-        >
-          ~48–72h
+        {/* Avatar + nom */}
+        <div className="flex items-center gap-2.5">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              className="w-7 h-7 rounded-full flex-shrink-0"
+              style={{ border: "1px solid var(--border-subtle)" }}
+            />
+          ) : (
+            <div
+              className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+              style={{
+                background: "rgba(0, 230, 118, 0.12)",
+                color: "var(--accent-green)",
+                fontFamily: "'Oxanium', sans-serif",
+              }}
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div
+              className="text-xs font-medium truncate"
+              style={{ color: "var(--foreground)", fontFamily: "'DM Sans', sans-serif" }}
+            >
+              {displayName}
+            </div>
+            <div className="label-tag" style={{ fontSize: "8px" }}>PLAN FREE</div>
+          </div>
         </div>
+
+        {/* Déconnexion */}
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-all"
+          style={{
+            color: "var(--text-dim)",
+            fontFamily: "'Oxanium', sans-serif",
+            fontSize: "9px",
+            letterSpacing: "0.07em",
+          }}
+        >
+          <LogOut className="h-3 w-3" />
+          DÉCONNEXION
+        </button>
       </div>
     </aside>
   );

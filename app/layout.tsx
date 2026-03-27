@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { SiteProvider } from "@/components/layout/SiteContext";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "GSC Dashboard",
-  description: "Tableau de bord Google Search Console",
+  title: "Ranklit — GSC Dashboard",
+  description: "Dashboard Google Search Console — Inspection & Indexation",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="fr">
       <head>
@@ -20,12 +24,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <SiteProvider>
-          <Sidebar />
-          <main className="ml-56 min-h-screen overflow-auto">
+        {user ? (
+          <SiteProvider>
+            <Sidebar user={user} />
+            <main className="ml-56 min-h-screen overflow-auto">
+              {children}
+            </main>
+          </SiteProvider>
+        ) : (
+          <main className="min-h-screen">
             {children}
           </main>
-        </SiteProvider>
+        )}
       </body>
     </html>
   );
