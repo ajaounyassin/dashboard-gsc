@@ -114,7 +114,9 @@ export function useAudit(siteUrl: string) {
     );
   }
 
-  // ── Inspect & Auto-Index ─────────────────────────────────
+  // ── Inspect & Auto-Index (pipeline parallèle) ────────────
+  // Workflow : inspecter 1 URL → si non-indexée, lancer l'indexation en
+  // arrière-plan sans attendre → passer immédiatement à l'URL suivante.
   const [inspectAndIndexStatus, setInspectAndIndexStatus] = useState<string | null>(null);
 
   const inspectAndIndex = useCallback(async () => {
@@ -122,97 +124,89 @@ export function useAudit(siteUrl: string) {
     if (selectedUrls.length === 0) return;
 
     setIsInspecting(true);
+    setIsIndexing(true);
     setError(null);
     setScopeError(false);
-    setInspectAndIndexStatus("Inspection en cours…");
+    setInspectAndIndexStatus("Inspection + soumission en pipeline…");
     setInspectProgress({ done: 0, total: selectedUrls.length });
+    setIndexProgress({ done: 0, total: 0 });
 
-    // ── Phase 1 : inspection ──────────────────────────────
-    let updatedRows: AuditRow[] = rows;
-    let done = 0;
+    let inspectDone = 0;
+    let indexTotal = 0;
+    let indexDone = 0;
+    const indexingPromises: Promise<void>[] = [];
 
-    for (let i = 0; i < selectedUrls.length; i += INSPECT_CHUNK) {
-      const chunk = selectedUrls.slice(i, i + INSPECT_CHUNK);
+    for (const url of selectedUrls) {
+      // ── Inspection 1 URL ────────────────────────────────
       try {
         const res = await fetch("/api/audit/inspect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ urls: chunk, siteUrl }),
+          body: JSON.stringify({ urls: [url], siteUrl }),
         });
         const data: InspectApiResponse & { error?: string } = await res.json();
 
         if (!res.ok || data.error) {
           setError(data.error ?? "Erreur lors de l'inspection.");
-          setIsInspecting(false);
-          setInspectAndIndexStatus(null);
-          return;
+          break;
         }
 
-        updatedRows = updatedRows.map((row) => {
-          const result = data.results.find((r) => r.url === row.url);
-          return result ? { ...row, inspection: result } : row;
-        });
-        setRows(updatedRows);
+        const result = data.results[0];
+        setRows((prev) =>
+          prev.map((r) => (r.url === url ? { ...r, inspection: result } : r))
+        );
 
-        done += data.results.length;
-        setInspectProgress({ done, total: selectedUrls.length });
+        inspectDone++;
+        setInspectProgress({ done: inspectDone, total: selectedUrls.length });
+
+        // ── Si non-indexée → indexation en parallèle ────────
+        if (result && isNonIndexed(result.coverageState)) {
+          indexTotal++;
+          setIndexProgress({ done: indexDone, total: indexTotal });
+
+          const p = fetch("/api/audit/index", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ urls: [url], siteUrl }),
+          })
+            .then(async (r) => {
+              const d: IndexApiResponse & { error?: string; firstError?: string } = await r.json();
+              if (r.status === 403 && d.error === "INDEXING_SCOPE_MISSING") {
+                setScopeError(true);
+                return;
+              }
+              const indexResult = d.results?.[0];
+              if (indexResult) {
+                setRows((prev) =>
+                  prev.map((row) => (row.url === url ? { ...row, indexing: indexResult } : row))
+                );
+              }
+              if (d.firstError) setError(`Échec indexation : ${d.firstError}`);
+              indexDone++;
+              setIndexProgress({ done: indexDone, total: indexTotal });
+            })
+            .catch(() => { indexDone++; setIndexProgress({ done: indexDone, total: indexTotal }); });
+
+          indexingPromises.push(p);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur réseau.");
-        setIsInspecting(false);
-        setInspectAndIndexStatus(null);
-        return;
+        break;
       }
     }
 
     setIsInspecting(false);
 
-    // ── Phase 2 : soumission des non-indexés ──────────────
-    const toIndex = updatedRows
-      .filter((r) => r.selected && r.inspection && isNonIndexed(r.inspection.coverageState))
-      .map((r) => r.url);
+    // Attendre que toutes les indexations en cours se terminent
+    await Promise.allSettled(indexingPromises);
+    setIsIndexing(false);
 
-    if (toIndex.length === 0) {
+    if (indexTotal === 0) {
       setInspectAndIndexStatus("Aucune URL à soumettre — toutes déjà indexées.");
-      setTimeout(() => setInspectAndIndexStatus(null), 4000);
-      return;
+    } else {
+      setInspectAndIndexStatus(`✓ ${indexDone}/${indexTotal} URL(s) soumises à Google.`);
     }
-
-    setIsIndexing(true);
-    setInspectAndIndexStatus(`Soumission de ${toIndex.length} URL(s) non indexées…`);
-    setIndexProgress({ done: 0, total: toIndex.length });
-
-    try {
-      const res = await fetch("/api/audit/index", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ urls: toIndex, siteUrl }),
-      });
-      const data: IndexApiResponse & { error?: string } = await res.json();
-
-      if (res.status === 403 && data.error === "INDEXING_SCOPE_MISSING") {
-        setScopeError(true);
-        return;
-      }
-
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Erreur lors de l'indexation.");
-        return;
-      }
-
-      setRows((prev) =>
-        prev.map((row) => {
-          const result = data.results.find((r) => r.url === row.url);
-          return result ? { ...row, indexing: result } : row;
-        })
-      );
-      setIndexProgress({ done: data.processed, total: toIndex.length });
-      setInspectAndIndexStatus(`✓ ${data.processed} URL(s) soumises à Google.`);
-      setTimeout(() => setInspectAndIndexStatus(null), 5000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur réseau.");
-    } finally {
-      setIsIndexing(false);
-    }
+    setTimeout(() => setInspectAndIndexStatus(null), 5000);
   }, [rows, siteUrl]);
 
   // ── Index Selected ──────────────────────────────────────
